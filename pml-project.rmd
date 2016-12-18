@@ -1,13 +1,12 @@
 ---
 title: "PML Project"
-author: "Amit Chitnis"
 date: "December 18, 2016"
 output: html_document
 ---
 
 ## Load the data.
 
-```{r cache=TRUE}
+```{r}
 library(caret)
 set.seed(12345)
 trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -31,7 +30,7 @@ The training data set consists of 19622 values of 160 variables.
 
 ### Remove Near Zero Variables. 
 
-```{r cache=TRUE}
+```{r}
 nsv <- nearZeroVar(training)
 training <- training[, -nsv]
 testing <- testing[, -nsv]
@@ -40,7 +39,7 @@ testing <- testing[, -nsv]
 ```
 ### Next, remove the columns that from their description seem like they would not affect the prediciton outcome. The first five columns can be removed. 
 
-```{r cache=TRUE}
+```{r}
 # remove columns that may not affect prediction
 training <- training[, -(1:5)]
 testing <- testing[, -(1:5)]
@@ -48,7 +47,7 @@ testing <- testing[, -(1:5)]
 
 ### Next, remove the columns with No variability. 
 
-```{r cache=TRUE}
+```{r}
 # remove columns with no variability
 
 remNoVariabilityCols <- sapply(training, function(x) mean(is.na(x))) > 0.95
@@ -64,7 +63,7 @@ dim(testing)
 
 ### Split the training data set into train and validation data sets. To save the computer resources I have created data partition with just 25% of data from the training data set. 
 
-```{r cache=TRUE}
+```{r}
 # To save computer resources create data partition with just 25% of data in train model.
 inTrain <- createDataPartition(training$classe, p=0.25, list = FALSE)
 subTraining <- training[inTrain,]
@@ -76,7 +75,7 @@ dim(subTesting)
 ## Train Model
 
 ### Next, We train the model using Random Forest with a cross validation of 4 folds to avoid overfitting.
-```{r cache=TRUE}
+```{r}
 library(randomForest)
 fitControl <- trainControl(method = "cv", number = 4)
 modFit <- train(classe ~ ., data = subTraining, method = "rf", trControl = fitControl, prox = TRUE, allowParallel=TRUE)
@@ -84,7 +83,7 @@ modFit <- train(classe ~ ., data = subTraining, method = "rf", trControl = fitCo
 ```
 
 ## Cross Validation Testing
-```{r cache=TRUE}
+```{r}
 predTrain <- predict(modFit, subTesting)
 cm <- confusionMatrix(predTrain, subTesting$classe)
 cm$table
@@ -94,12 +93,12 @@ We can notice that there are very few variables out of this model.
 ## Estimate of Sample Error
 
 
-```{r cache=TRUE}
+```{r}
 accur <- postResample(subTesting$classe, predTrain)
 modAccuracy <- accur[[1]]
 modAccuracy
 ```
-```{r cache=TRUE}
+```{r}
 out_of_sample_error <- 1 - modAccuracy
 out_of_sample_error
 ```
@@ -108,14 +107,14 @@ out_of_sample_error
 
 ## Applying the model to the test data set.
 
-```{r cache=TRUE}
+```{r}
 answers <- predict(modFit, testing)
 answers <- as.character(answers)
 
 ```
 
 ## Answers to the quiz
-```{r cache=TRUE}
+```{r}
 answers
 ```
 
