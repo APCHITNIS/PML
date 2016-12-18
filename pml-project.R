@@ -40,6 +40,12 @@ modFit <- train(classe ~ ., data = subTraining, method = "rf", trControl = fitCo
 modFit
 predTrain <- predict(modFit, subTesting)
 confusionMatrix(predTrain, subTesting$classe)
+
+accur <- postResample(subTesting$classe, predTrain)
+modAccuracy <- accur[[1]]
+modAccuracy
+out_of_sample_error <- 1 - modAccuracy
+out_of_sample_error
 answers <- predict(modFit, testing)
 answers <- as.character(answers)
 answers
