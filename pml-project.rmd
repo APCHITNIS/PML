@@ -1,13 +1,14 @@
 ---
 title: "PML Project"
 author: "Amit Chitnis"
-date: "November 27, 2016"
+date: "December 18, 2016"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+## Load the data.
+
+```{r cache=TRUE}
 library(caret)
-library(randomForest)
 set.seed(12345)
 trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 testURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
@@ -21,45 +22,100 @@ if(!file.exists("pml-testing.csv")){
 #Read the data sets
 training <- read.csv("pml-training.csv", na.strings = c("NA", "#DIV/0!", ""))
 testing <- read.csv("pml-testing.csv",na.strings = c("NA", "#DIV/0!", ""))
-# remove near zero variables 
+dim(training)
+dim(testing)
+```
+The training data set consists of 19622 values of 160 variables.
+
+## Clense the data sets.
+
+### Remove Near Zero Variables. 
+
+```{r cache=TRUE}
 nsv <- nearZeroVar(training)
 training <- training[, -nsv]
 testing <- testing[, -nsv]
 
+
+```
+### Next, remove the columns that from their description seem like they would not affect the prediciton outcome. The first five columns can be removed. 
+
+```{r cache=TRUE}
+# remove columns that may not affect prediction
+training <- training[, -(1:5)]
+testing <- testing[, -(1:5)]
+```
+
+### Next, remove the columns with No variability. 
+
+```{r cache=TRUE}
 # remove columns with no variability
 
 remNoVariabilityCols <- sapply(training, function(x) mean(is.na(x))) > 0.95
 training <- training[, remNoVariabilityCols == F]
 testing <- testing[, remNoVariabilityCols == F]
+dim (training)
+dim(testing)
+```
 
-# remove columns that may not affect prediction
-training <- training[, -(1:5)]
-testing <- testing[, -(1:5)]
+### After cleasing we reduced the training data set to 54 variables.
 
+## Validation Set 
+
+### Split the training data set into train and validation data sets. To save the computer resources I have created data partition with just 25% of data from the training data set. 
+
+```{r cache=TRUE}
 # To save computer resources create data partition with just 25% of data in train model.
 inTrain <- createDataPartition(training$classe, p=0.25, list = FALSE)
 subTraining <- training[inTrain,]
 subTesting <- training[-inTrain,]
-# Use CV method to save computer resoures
+dim(subTraining)
+dim(subTesting)
+```
+
+## Train Model
+
+### Next, We train the model using Random Forest with a cross validation of 4 folds to avoid overfitting.
+```{r cache=TRUE}
+library(randomForest)
 fitControl <- trainControl(method = "cv", number = 4)
-modFit <- train(classe ~ ., data = subTraining, method = "rf", trControl = fitControl, prox = TRUE)
-modFit
+modFit <- train(classe ~ ., data = subTraining, method = "rf", trControl = fitControl, prox = TRUE, allowParallel=TRUE)
+
+```
+
+## Cross Validation Testing
+```{r cache=TRUE}
 predTrain <- predict(modFit, subTesting)
-confusionMatrix(predTrain, subTesting$classe)
+cm <- confusionMatrix(predTrain, subTesting$classe)
+cm$table
+```
+We can notice that there are very few variables out of this model.
+
+## Estimate of Sample Error
+
+
+```{r cache=TRUE}
+accur <- postResample(subTesting$classe, predTrain)
+modAccuracy <- accur[[1]]
+modAccuracy
+```
+```{r cache=TRUE}
+out_of_sample_error <- 1 - modAccuracy
+out_of_sample_error
+```
+
+### Both Accuracy of the model and the sample error are satisfactory. So our model is good to go!
+
+## Applying the model to the test data set.
+
+```{r cache=TRUE}
 answers <- predict(modFit, testing)
 answers <- as.character(answers)
+
+```
+
+## Answers to the quiz
+```{r cache=TRUE}
 answers
 ```
-
-
-
-
-
-
-
-
-
-```
-
-
 
